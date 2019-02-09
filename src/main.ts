@@ -47,6 +47,15 @@ const ENGINES: SearchEngine[] = [
     },
 ]
 
+const SUPPORTED_HOST = ENGINES.map(x => x.hostname)
+function urlIsSupported (url?: string) {
+    if (!url) {return false}
+    for (let host of SUPPORTED_HOST) {
+        if (url.includes(host)) { return true }
+    }
+    return false
+}
+
 function getCurrentState (currentUrl?: string): CurrentState | null {
     if (!currentUrl) {return null}
     const urlObj = new URL(currentUrl + '')
@@ -63,6 +72,14 @@ function getCurrentState (currentUrl?: string): CurrentState | null {
     }
 }
 
+function initPageAction (tab: browser.tabs.Tab) {
+    if (urlIsSupported(tab.url)) {
+        const tabId = Number(tab.id)
+        // browser.pageAction.setIcon({tabId: tabId})
+        browser.pageAction.show(tabId)
+    }
+}
+
 browser.pageAction.onClicked.addListener(function (tab) {
     const state = getCurrentState(tab.url)
     if (!state) {return console.error('[To Developer] This should not happen.')}
@@ -71,3 +88,8 @@ browser.pageAction.onClicked.addListener(function (tab) {
     })
 })
 
+browser.tabs.query({currentWindow: false, active: true}).then((tabs) => {
+    for (let tab of tabs) {
+        initPageAction(tab)
+    }
+})
